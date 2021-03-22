@@ -1,0 +1,46 @@
+config:
+  target: "https://api.todoist.com"
+  phases:
+    - duration: 10
+      arrivalRate: 1
+      name: "Phase 1"
+  defaults: 
+    headers:
+      Authorization: Bearer {{$processEnvironment.TOKEN}}
+      Content-Type: application/json
+      X-Requested-Id: $(uuidgen)
+scenarios: 
+  - flow:     
+      - log: "Creating a Test Project"
+      - post: 
+          url: /rest/v1/projects
+          json:
+            name: "Artillery Project"
+          capture:
+            json: "$.id"
+            as: "projectID"
+      - get: 
+          url: /rest/v1/tasks
+      - post:
+          url: /rest/v1/tasks
+          json: 
+            content: "Artillery Test"
+            project_id: "{{projectID}}"
+          capture:
+            json: "$.id"
+            as: "taskID"
+      - get: 
+          url: /rest/v1/tasks/{{taskID}}
+      - post:
+          url: /rest/v1/tasks/{{taskID}}
+          json: 
+            content: "New task content"
+      - post:
+          url: /rest/v1/tasks/{{taskID}}/close
+      - post:
+          url: /rest/v1/tasks/{{taskID}}/reopen
+      - delete:
+          url: /rest/v1/tasks/{{taskID}}
+      - delete: 
+          url: /rest/v1/projects/{{projectID}}
+      - log: "Test Project Deleted"
